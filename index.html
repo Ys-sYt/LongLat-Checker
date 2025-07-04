@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- PWA用のテーマカラー -->
+    <meta name="theme-color" content="#3887be"/>
+
+    <title>MapLibre GL JS - 緯度経度取得マップ</title>
+
+    <!-- PWAマニフェストファイルへのリンク -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- MapLibre GL JS の CSS を読み込み -->
+    <link href='https://unpkg.com/maplibre-gl@4.1.2/dist/maplibre-gl.css' rel='stylesheet' />
+
+    <!-- MapLibre GL JS の JavaScript を読み込み -->
+    <script src='https://unpkg.com/maplibre-gl@4.1.2/dist/maplibre-gl.js'></script>
+
+    <style>
+        body { margin: 0; padding: 0; font-family: sans-serif; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+
+        .control-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 280px;
+        }
+        .control-panel h3 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+        }
+        #locate-btn {
+            width: 100%;
+            padding: 8px;
+            background-color: #3887be;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        #locate-btn:hover {
+            background-color: #3071a1;
+        }
+        .coords-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        #coords-input {
+            flex-grow: 1;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: monospace;
+        }
+        #copy-btn {
+            padding: 6px 10px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #copy-btn:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+
+<div id='map'></div>
+
+<div class="control-panel">
+    <h3>地点の指定</h3>
+    <button id="locate-btn">現在地を取得</button>
+    <p style="font-size: 12px; margin: 0; text-align: center;">または、地図上をクリックしてください。</p>
+    <hr style="width:100%; border:0; border-top: 1px solid #eee;">
+    <h3>指定した地点の緯度・経度</h3>
+    <div class="coords-container">
+        <input type="text" id="coords-input" readonly placeholder="地点を指定してください">
+        <button id="copy-btn">コピー</button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+
+        // 地図の初期化
+        const map = new maplibregl.Map({
+            container: 'map', // 地図を表示するコンテナのID
+            style: '/.netlify/functions/map-style', // 地図のスタイル
+            center: [139.753, 35.689], // 初期表示の中心座標 [経度, 緯度] (東京駅)
+            zoom: 12 // 初期ズームレベル
+        });
+
+        let marker = null; // マーカーを保持する変数
+
+        // --- DOM要素の取得 ---
+        const locateBtn = document.getElementById('locate-btn');
+        const coordsInput = document.getElementById('coords-input');
+        const copyBtn = document.getElementById('copy-btn');
+
+        // --- 関数定義 ---
+        
+        // マーカーと座標表示を更新する関数
+        function updateMarkerAndCoords(lngLat) {
+            // 既存のマーカーがあれば削除
+            if (marker) {
+                marker.remove();
+            }
+
+            // 新しいマーカーを作成して地図に追加
+            marker = new maplibregl.Marker({
+                color: "#FF0000", // マーカーの色
+                draggable: false
+            })
+            .setLngLat(lngLat)
+            .addTo(map);
+
+            // 緯度・経度を入力欄に表示（小数点以下6桁に丸める）
+            const lat = lngLat.lat.toFixed(6);
+            const lng = lngLat.lng.toFixed(6);
+            coordsInput.value = `${lat}, ${lng}`;
+            
+            // 地図の中心をマーカーの位置にスムーズに移動
+            map.flyTo({
+                center: lngLat,
+                zoom: 15
+            });
+        }
+
+        // --- イベントリスナーの設定 ---
+
+        // 1. GPSで現在地を取得するボタン
+        locateBtn.addEventListener('click', () => {
+            if (!navigator.geolocation) {
+                alert('お使いのブラウザは位置情報取得に対応していません。');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                // 成功時のコールバック
+                (position) => {
+                    const lngLat = {
+                        lng: position.coords.longitude,
+                        lat: position.coords.latitude
+                    };
+                    updateMarkerAndCoords(lngLat);
+                },
+                // エラー時のコールバック
+                (error) => {
+                    let errorMessage = "位置情報の取得に失敗しました。";
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = "位置情報の利用が許可されていません。";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage = "現在地を特定できませんでした。";
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage = "位置情報の取得がタイムアウトしました。";
+                            break;
+                    }
+                    alert(errorMessage);
+                }
+            );
+        });
+
+        // 2. 地図上をクリックして地点を指定
+        map.on('click', (e) => {
+            updateMarkerAndCoords(e.lngLat);
+        });
+
+        // 3. 緯度・経度をクリップボードにコピーするボタン
+        copyBtn.addEventListener('click', () => {
+            if (!coordsInput.value) {
+                alert('先に地点を指定してください。');
+                return;
+            }
+
+            navigator.clipboard.writeText(coordsInput.value).then(() => {
+                // 成功時のフィードバック
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'コピー完了!';
+                copyBtn.style.backgroundColor = '#28a745'; // 緑色に変更
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                    copyBtn.style.backgroundColor = '#6c757d'; // 元の色に戻す
+                }, 2000); // 2秒後に元に戻す
+            }).catch(err => {
+                console.error('コピーに失敗しました: ', err);
+                alert('クリップボードへのコピーに失敗しました。');
+            });
+        });
+    });
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            }).catch(err => {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "緯度経度マップ PWA",
+  "short_name": "緯度経度Map",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3887be",
+  "description": "現在地や指定した場所の緯度経度を取得できるシンプルな地図アプリです。",
+  "icons": [
+    {
+      "src": "icons/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
