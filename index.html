@@ -15,7 +15,9 @@
     <link href='https://unpkg.com/maplibre-gl@4.1.2/dist/maplibre-gl.css' rel='stylesheet' />
 
     <!-- MapLibre GL JS の JavaScript を読み込み -->
+     <script src="muni.js"></script>
     <script src='https://unpkg.com/maplibre-gl@4.1.2/dist/maplibre-gl.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 
     <style>
         body { margin: 0; padding: 0; font-family: sans-serif; }
@@ -65,6 +67,14 @@
             font-size: 13px;
             font-family: monospace;
         }
+        #coords-dms-input {
+            flex-grow: 1;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: monospace;
+        }
         #copy-btn {
             padding: 6px 10px;
             background-color: #6c757d;
@@ -74,6 +84,19 @@
             cursor: pointer;
         }
         #copy-btn:hover {
+            background-color: #5a6268;
+        }
+        .unified-btn {
+            padding: 6px 10px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+        .unified-btn:hover {
             background-color: #5a6268;
         }
     </style>
@@ -89,9 +112,17 @@
     <hr style="width:100%; border:0; border-top: 1px solid #eee;">
     <h3>指定した地点の緯度・経度</h3>
     <div class="coords-container">
-        <input type="text" id="coords-input" readonly placeholder="地点を指定してください">
+        <input type="text" id="coords-input" readonly placeholder="10進法の緯度・経度を表示します">
         <button id="copy-btn">コピー</button>
     </div>
+    <div id="coords-dms" style="font-size:12px;color:#555;margin-left:2px;"></div>
+    <div id="coords-elevation" style="font-size:12px;color:#555;margin-left:2px;"></div>
+    <div id="coords-address" style="font-size:12px;color:#555;margin-left:2px;"></div>
+    <div style="display:flex; gap:5px;margin-top:3px;">
+    <button id="open-gmap-btn" class="unified-btn" style="flex:1;">Googleマップで開く</button>
+    <button id="qrcode-btn" class="unified-btn">QR</button>
+    </div>
+    <div id="qrcode-area"></div>
 </div>
 
 <script>
@@ -112,6 +143,12 @@
         const locateBtn = document.getElementById('locate-btn');
         const coordsInput = document.getElementById('coords-input');
         const copyBtn = document.getElementById('copy-btn');
+        const coordsDMS = document.getElementById('coords-dms');
+        const coordsElevation = document.getElementById('coords-elevation');
+        const coordsAddress = document.getElementById('coords-address');
+        const openGmapBtn = document.getElementById('open-gmap-btn');
+        const qrcodeBtn = document.getElementById('qrcode-btn');
+        const qrcodeArea = document.getElementById('qrcode-area');
 
         // --- 関数定義 ---
         
@@ -142,6 +179,89 @@
             });
         }
 
+        // 度分秒変換関数
+        function toDMS(deg, type) {
+            const sign = deg < 0 ? -1 : 1;
+            const absDeg = Math.abs(deg);
+            const d = Math.floor(absDeg);
+            const minfloat = (absDeg - d) * 60;
+            const m = Math.floor(minfloat);
+            const s = ((minfloat - m) * 60).toFixed(2);
+
+            let dir = '';
+            if (type === 'lat') dir = sign > 0 ? 'N' : 'S';
+            if (type === 'lng') dir = sign > 0 ? 'E' : 'W';
+
+            const mStr = String(m).padStart(2, '0')
+            const sStr = String(s).padStart(5, '0');
+
+            return `${d}°${mStr}'${sStr}"${dir}`;
+        }
+
+        // すべての表示を更新
+        function updateAllView(lngLat) {
+            updateMarkerAndCoords(lngLat);
+
+            // 60進数(DMS)表示
+            coordsDMS.innerText = `${toDMS(lngLat.lat, 'lat')}, ${toDMS(lngLat.lng, 'lng')}`;
+
+            // Google Map遷移
+            openGmapBtn.onclick = () => {
+                const url = `https://www.google.com/maps?q=${lngLat.lat},${lngLat.lng}`;
+                window.open(url, '_blank');
+            };
+
+            // QRコード生成（qriousライブラリ必要）
+            qrcodeBtn.onclick = () => {
+                let mapUrl = `https://www.google.com/maps?q=${lngLat.lat},${lngLat.lng}`;
+                qrcodeArea.innerHTML = '';
+                const qr = document.createElement('canvas');
+                new QRious({element: qr, value: mapUrl, size: 100});
+                qrcodeArea.appendChild(qr);
+            };
+
+            // 住所取得（国土地理院API例）
+            fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder?lat=${lngLat.lat}&lon=${lngLat.lng}`)
+              .then(res => res.json())
+              .then(data => {
+                if (data.results && data.results.muniCd && data.results.lv01Nm) {
+                    let muniCd = data.results.muniCd;
+                    if (muniCd.startsWith('0')) {
+                    muniCd = muniCd.replace(/^0+/, '');
+                    }
+                  // muni.jsのGSI.MUNI_ARRAYから該当データ取得
+                  const muniRaw = GSI.MUNI_ARRAY[muniCd];
+                  let addressText = '';
+                  if (muniRaw) {
+                    // '1,北海道,1102,札幌市　北区' → ['1','北海道','1102','札幌市　北区']
+                    const parts = muniRaw.split(',');
+                    // 数字以外を結合
+                    addressText = `${parts[1]} ${parts[3]} ${data.results.lv01Nm}`;
+                  } else {
+                    // muniCdが見つからない場合はlv01Nmのみ
+                    addressText = data.results.lv01Nm;
+                  }
+                  coordsAddress.innerText = addressText;
+                } else {
+                  coordsAddress.innerText = '';
+                }
+              })
+              .catch(() => coordsAddress.innerText = '');
+
+            // 標高取得（国土地理院API例）
+            fetch(`https://cyberjapandata2.gsi.go.jp/general/elevation?lat=${lngLat.lat}&lon=${lngLat.lng}&outtype=JSON`)
+              .then(res => res.json())
+              .then(data => {
+                if (data && data.elevation !== undefined) {
+                  // 標高とhsrc（測量種別）を表示
+                  coordsElevation.innerText = `標高: ${data.elevation} m（${data.hsrc || ''}）`;
+                } else {
+                  coordsElevation.innerText = '';
+                }
+              })
+              .catch(() => coordsElevation.innerText = '');
+        }
+
         // --- イベントリスナーの設定 ---
 
         // 1. GPSで現在地を取得するボタン
@@ -158,7 +278,7 @@
                         lng: position.coords.longitude,
                         lat: position.coords.latitude
                     };
-                    updateMarkerAndCoords(lngLat);
+                    updateAllView(lngLat);
                 },
                 // エラー時のコールバック
                 (error) => {
@@ -181,7 +301,7 @@
 
         // 2. 地図上をクリックして地点を指定
         map.on('click', (e) => {
-            updateMarkerAndCoords(e.lngLat);
+            updateAllView(e.lngLat);
         });
 
         // 3. 緯度・経度をクリップボードにコピーするボタン
