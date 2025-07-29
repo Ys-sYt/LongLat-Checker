@@ -75,6 +75,18 @@
             font-size: 13px;
             font-family: monospace;
         }
+        #copyBtn {
+            padding: 6px 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        #copyBtn:hover {
+            background-color: #218838;
+        }
         .unified-btn {
             padding: 6px 10px;
             background-color: #6c757d;
@@ -101,7 +113,7 @@
     <hr style="width:100%; border:0; border-top: 1px solid #eee;">
     <h3>指定した地点の緯度・経度</h3>
     <div class="coords-container">
-        <input type="text" id="coords-input" readonly placeholder="10進法の緯度・経度を表示します">
+        <input type="text" class="copyBtn" readonly placeholder="10進法の緯度・経度を表示します">
         <button class="unified-btn">コピー</button>
     </div>
     <div id="coords-dms" style="font-size:12px;color:#555;margin-left:2px;"></div>
