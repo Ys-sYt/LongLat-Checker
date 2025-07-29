@@ -225,7 +225,7 @@
                     // '1,北海道,1102,札幌市　北区' → ['1','北海道','1102','札幌市　北区']
                     const parts = muniRaw.split(',');
                     // 数字以外を結合
-                    addressText = `${parts[1]} ${parts[3]} ${data.results.lv01Nm}`;
+                    addressText = `${parts[1]} ${parts[3]} ${data.results.lv01Nm} by 国土地理院`;
                   } else {
                     // muniCdが見つからない場合はlv01Nmのみ
                     addressText = data.results.lv01Nm;
@@ -244,7 +244,7 @@
               .then(data => {
                 if (data && data.elevation !== undefined) {
                   // 標高とhsrc（測量種別）を表示
-                  coordsElevation.innerText = `標高: ${data.elevation} m（${data.hsrc || ''}`;
+                  coordsElevation.innerText = `標高: ${data.elevation} m${data.hsrc || ''} by 国土地理院`;
                 } else {
                   coordsElevation.innerText = '';
                 }
