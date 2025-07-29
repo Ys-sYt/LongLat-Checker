@@ -221,7 +221,7 @@
             };
 
             // 住所取得（国土地理院API例）
-            fetch(`https://cyberjapandata2.gsi.go.jp/general/dem/scripts/getelevation.php?lat=${lngLat.lat}&lon=${lngLat.lng}`)
+            fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=${lngLat.lat}&lon=${lngLat.lng}`)
               .then(res => res.json())
               .then(data => {
                 if (data.results && data.results.muniCd && data.results.lv01Nm) {
