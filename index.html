@@ -249,8 +249,9 @@
               .catch(() => coordsAddress.innerText = '');
 
             // 標高取得（国土地理院API例）
-            fetch(`https://cyberjapandata2.gsi.go.jp/general/elevation?lat=${lngLat.lat}&lon=${lngLat.lng}&outtype=JSON`)
-              .then(res => res.json())
+            fetch('/.netlify/functions/elevation?lat=35.689&lon=139.753')
+            .then(res => res.json())
+            .then(data => console.log(data))
               .then(data => {
                 if (data && data.elevation !== undefined) {
                   // 標高とhsrc（測量種別）を表示
