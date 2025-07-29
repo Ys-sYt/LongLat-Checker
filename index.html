@@ -249,7 +249,7 @@
               .catch(() => coordsAddress.innerText = '');
 
             // 標高取得（国土地理院API例）
-            fetch(`https://cyberjapandata2.gsi.go.jp/general/elevation?lat=${lat}&lon=${lon}&outtype=JSON`)
+            fetch(`https://cyberjapandata2.gsi.go.jp/general/elevation?lat=${lngLat.lat}&lon=${lngLat.lng}&outtype=JSON`)
             .then(res => res.json())
             .then(data => console.log(data))
               .then(data => {
