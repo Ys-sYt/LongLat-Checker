@@ -1,6 +1,4 @@
 Deployed to
 https://longlat-checker.netlify.app/
 
-Simple map application you can check coordinate by tapping on the map / by locating by GNSS. 
-Integrated with 2 api by GSI (Geospatial Information Authority of Japan (GSI)) for getting the address and the elevation. 
-PWA is possible. 
+This is a simple map application that allows you to check coordinates by tapping on the map or by locating them via GNSS. It is integrated with two APIs from the Geospatial Information Authority of Japan (GSI) to get the address and elevation. PWA is possible.
