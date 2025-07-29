@@ -75,17 +75,6 @@
             font-size: 13px;
             font-family: monospace;
         }
-        #copy-btn {
-            padding: 6px 10px;
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        #copy-btn:hover {
-            background-color: #5a6268;
-        }
         .unified-btn {
             padding: 6px 10px;
             background-color: #6c757d;
@@ -113,11 +102,11 @@
     <h3>指定した地点の緯度・経度</h3>
     <div class="coords-container">
         <input type="text" id="coords-input" readonly placeholder="10進法の緯度・経度を表示します">
-        <button id="copy-btn">コピー</button>
+        <button class="unified-btn">コピー</button>
     </div>
     <div id="coords-dms" style="font-size:12px;color:#555;margin-left:2px;"></div>
-    <div id="coords-elevation" style="font-size:12px;color:#555;margin-left:2px;"></div>
     <div id="coords-address" style="font-size:12px;color:#555;margin-left:2px;"></div>
+    <div id="coords-elevation" style="font-size:12px;color:#555;margin-left:2px;"></div>
     <div style="display:flex; gap:5px;margin-top:3px;">
     <button id="open-gmap-btn" class="unified-btn" style="flex:1;">Googleマップで開く</button>
     <button id="qrcode-btn" class="unified-btn">QR</button>
@@ -255,7 +244,7 @@
               .then(data => {
                 if (data && data.elevation !== undefined) {
                   // 標高とhsrc（測量種別）を表示
-                  coordsElevation.innerText = `標高: ${data.elevation} m（${data.hsrc || ''}）`;
+                  coordsElevation.innerText = `標高: ${data.elevation} m（${data.hsrc || ''}`;
                 } else {
                   coordsElevation.innerText = '';
                 }
